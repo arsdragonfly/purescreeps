@@ -1,0 +1,15 @@
+{
+  "name": "purescreeps",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-screeps-classy": "https://github.com/arsdragonfly/purescript-screeps.git#v4.1.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^4.0.0"
+  }
+}
