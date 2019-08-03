@@ -4,7 +4,6 @@ import Prelude
 import Effect (Effect)
 import Effect.Console (log)
 
-import Screeps
 import Screeps.Game as Game
 
 main :: Effect Unit
