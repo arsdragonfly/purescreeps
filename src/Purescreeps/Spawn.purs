@@ -1,4 +1,4 @@
-module Spawn where
+module Purescreeps.Spawn where
 
 import Screeps.BodyPartType
 
@@ -15,8 +15,6 @@ import Screeps.Room (find)
 import Screeps.Spawn (Spawn, createCreep')
 
 type BodySpec = Array BodyPartType
-
-type CreepMemory = { spawn :: Spawn }
 
 createFixedCreep :: Spawn -> Effect (Either ReturnCode String)
 createFixedCreep s = createCreep' s [part_move, part_carry, part_work] Nothing {spawn : s}
