@@ -2,10 +2,10 @@ module Main where
 
 import Effect (Effect)
 import Effect.Console (log)
-import Prelude (Unit, bind, show, ($), (<>))
-import Purescreeps.Spawn (createCreeps)
+import Prelude (Unit, bind, ($), (<>), show)
+import Purescreeps.Spawn (createCreepsForAllColonies)
 
 main :: Effect Unit
 main = do
-  result <- createCreeps
-  log $ "Start: " <> show result
+  results <- createCreepsForAllColonies
+  log $ "Start: " <> show results
