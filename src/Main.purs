@@ -1,12 +1,11 @@
 module Main where
 
-import Prelude
 import Effect (Effect)
 import Effect.Console (log)
-
-import Screeps.Game as Game
+import Prelude (Unit, bind, show, ($), (<>))
+import Spawn (createCreeps)
 
 main :: Effect Unit
 main = do
-  startUsed <- Game.getUsedCpu
-  log $ "Start: " <> show startUsed
+  result <- createCreeps
+  log $ "Start: " <> show result
