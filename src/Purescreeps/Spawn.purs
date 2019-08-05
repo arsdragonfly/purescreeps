@@ -1,30 +1,36 @@
 module Purescreeps.Spawn where
 
-import Data.List (List)
+import Prelude
+
 import Data.Either (Either)
+import Data.List (List, fold)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Effect (Effect)
-import Prelude (bind, map, ($), (<<<))
+import Effect.Console (log)
 import Purescreeps.Colony (Colony(..), findColonies)
-import Screeps.BodyPartType (BodyPartType, part_carry, part_move, part_work)
+import Purescreeps.Creep (BodySpec, genericCreep)
 import Screeps.FindType (find_my_spawns)
 import Screeps.ReturnCode (ReturnCode)
 import Screeps.Room (find)
 import Screeps.Spawn (Spawn, createCreep')
 
-type BodySpec = Array BodyPartType
 
-createFixedCreep :: Spawn -> Effect (Either ReturnCode String)
-createFixedCreep s = createCreep' s [part_move, part_carry, part_work] Nothing {spawn : s}
+createSpecifiedCreep :: Spawn -> BodySpec -> Effect (Either ReturnCode String)
+createSpecifiedCreep spawn spec = createCreep' spawn spec Nothing {spawn : spawn}
 
 findSpawns :: Colony -> Array Spawn
 findSpawns (Colony room) = find room find_my_spawns
 
+-- TODO: take into account containers
+findCapacity :: Colony -> Int
+findCapacity _ = 300
+
 createCreeps :: Colony -> Effect (Array (Either ReturnCode String))
-createCreeps = sequence <<< map createFixedCreep <<< findSpawns
+createCreeps colony = sequence $ map (\s -> createSpecifiedCreep s (genericCreep $ findCapacity colony)) $ findSpawns colony
 
 createCreepsForAllColonies :: Effect (List (Array (Either ReturnCode String)))
 createCreepsForAllColonies = do
   colonies <- findColonies
+  _ <- log <<< fold $ map (\c -> show (genericCreep $ findCapacity c)) colonies
   sequence $ map createCreeps colonies
