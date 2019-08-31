@@ -9,3 +9,4 @@ psc-ide-server.tix
 /psc-bundle.tix
 *.#*
 .psc-ide-port
+secrets.js
