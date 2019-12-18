@@ -2,6 +2,8 @@ const secrets = require('./secrets.js')
 
 module.exports = function(grunt) {
 
+    let branch = grunt.option('branch') || 'default'
+
     grunt.loadNpmTasks('grunt-screeps');
 
     grunt.initConfig({
@@ -9,7 +11,7 @@ module.exports = function(grunt) {
             options: {
                 email: secrets.email,
                 password: secrets.password,
-                branch: 'default',
+                branch: branch,
                 ptr: false
             },
             dist: {
