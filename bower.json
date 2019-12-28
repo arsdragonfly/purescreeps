@@ -7,7 +7,8 @@
     "output"
   ],
   "dependencies": {
-    "purescript-screeps-classy": "https://github.com/arsdragonfly/purescript-screeps.git#master"
+    "purescript-screeps-classy": "https://github.com/arsdragonfly/purescript-screeps.git#master",
+    "purescript-random": "^4.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

@@ -10,7 +10,7 @@ type CreepMemory = { spawn :: Spawn }
 
 type BodySpec = Array BodyPartType
 
-genericCreep :: Int -> BodySpec
+genericCreep :: Int → BodySpec
 genericCreep capacity | capacity < 50 = []
 genericCreep capacity | capacity < 100 = [part_move]
 genericCreep capacity | capacity < 150 = [part_move, part_carry]

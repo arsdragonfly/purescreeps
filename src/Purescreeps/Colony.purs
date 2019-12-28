@@ -19,7 +19,7 @@ instance showColony :: Show Colony where
 findColonies :: Effect (List Colony)
 findColonies = do
   rooms <- Game.rooms
-  roomsWithSpawns <- pure $ filter (\r -> not <<< null $ find r find_my_spawns) rooms
+  roomsWithSpawns <- pure $ filter (\r → not <<< null $ find r find_my_spawns) rooms
   pure $ (fromFoldable <<< map Colony) roomsWithSpawns
 
 -- findColonies :: Effect ( Array Colony )
