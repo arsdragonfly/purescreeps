@@ -1,7 +1,6 @@
 module Purescreeps.Spawn where
 
 import Prelude
-
 import Data.Either (Either)
 import Data.List (List, fold)
 import Data.Maybe (Maybe(..))
@@ -15,9 +14,8 @@ import Screeps.ReturnCode (ReturnCode)
 import Screeps.Room (find)
 import Screeps.Spawn (Spawn, createCreep')
 
-
 createSpecifiedCreep :: Spawn → BodySpec → Effect (Either ReturnCode String)
-createSpecifiedCreep spawn spec = createCreep' spawn spec Nothing {spawn : spawn}
+createSpecifiedCreep spawn spec = createCreep' spawn spec Nothing { spawn: spawn }
 
 findSpawns :: Colony → Array Spawn
 findSpawns (Colony room) = find room find_my_spawns

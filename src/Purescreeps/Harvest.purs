@@ -1,9 +1,7 @@
 module Purescreeps.Harvest where
 
 import Prelude
-
 import Data.Maybe (Maybe)
-import Effect (Effect)
 import Purescreeps.Random (sampleByStringHash)
 import Screeps.Creep (Creep, name)
 import Screeps.FindType (find_sources)
