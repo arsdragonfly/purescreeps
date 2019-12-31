@@ -14,11 +14,13 @@
     "build": "npm run clean && pulp --then \"npm run wrapMain\" build --skip-entry-point --optimise --to output/screepsMain.js",
     "deploy": "grunt screeps",
     "deploy:sim": "grunt screeps --branch=purescreeps",
+    "deploy:local": "cp output/main.js ~/.config/Screeps/scripts/127_0_0_1___21025/purescreeps/main.js",
     "wrapMain": "cp output/screepsMain.js output/main.js && echo 'module.exports.loop = PS[\"Main\"].main' >> output/main.js",
     "test": "pulp test",
-    "watch": "npm run clean && pulp --watch build --skip-entry-point --optimise --to output/screepsMain.js",
-    "watch:deploy": "npm run clean && pulp --watch --then \"npm run wrapMain && npm run deploy\" build --skip-entry-point --optimise --to output/screepsMain.js",
-    "watch:deploy:sim": "npm run clean && pulp --watch --then \"npm run wrapMain && npm run deploy:sim\" build --skip-entry-point --optimise --to output/screepsMain.js",
+    "watch": "pulp --watch build --skip-entry-point --optimise --to output/screepsMain.js",
+    "watch:deploy": "pulp --watch --then \"npm run wrapMain && npm run deploy\" build --skip-entry-point --optimise --to output/screepsMain.js",
+    "watch:deploy:sim": "pulp --watch --then \"npm run wrapMain && npm run deploy:sim\" build --skip-entry-point --optimise --to output/screepsMain.js",
+    "watch:deploy:local": "pulp --watch --then \"npm run wrapMain && npm run deploy:local\" build --skip-entry-point --optimise --to output/screepsMain.js",
     "watch:test": "pulp --watch test"
   },
   "devDependencies": {

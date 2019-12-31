@@ -4,24 +4,23 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Effect (Effect)
-import Effect.Console (log, logShow)
+import Effect.Console (logShow)
 import Purescreeps.Harvest (findCorrespondingSource)
 import Purescreeps.ReturnCode (orElse)
 import Purescreeps.Spawn (createCreepsForAllColonies)
-import Screeps.Creep (Creep, harvestSource, moveOpts, moveTo', upgradeController)
+import Purescreeps.Creep (moveToAction)
+import Screeps.Creep (Creep, harvestSource, upgradeController)
 import Screeps.Game (creeps)
-import Screeps.ReturnCode (ReturnCode)
 import Screeps.Room (controller)
 import Screeps.RoomObject (room)
 import Screeps.Stores (storeTotalFree, storeTotalUsed)
-import Screeps.Types (TargetPosition(..))
 
 main :: Effect Unit
 main = do
   createCreepsForAllColonies >>= logShow
-  void $ creeps >>= traverse runCreep
+  creeps >>= traverse runCreep >>= logShow
 
-runCreep :: Creep → Effect Unit
+runCreep :: Creep → Effect String
 runCreep creep = case { source: findCorrespondingSource creep, controller: controller (room creep) } of
   { source: Just source, controller: Just controller } → do
     returnCode ←
@@ -33,10 +32,5 @@ runCreep creep = case { source: findCorrespondingSource creep, controller: contr
           else
             (harvestSource creep source >>= orElse (moveToAction upgradeController creep controller))
       )
-    logShow returnCode
-  { source: _, controller: _ } → log "No source/controller found"
-
-moveToAction :: forall a. (Creep → a → Effect ReturnCode) → Creep → a → Effect ReturnCode
-moveToAction action creep target =
-  action creep target
-    >>= orElse (moveTo' creep (TargetObj target) (moveOpts { visualizePathStyle = Just {} }))
+    pure $ show returnCode
+  { source: _, controller: _ } → pure $ "No source/controller found"
