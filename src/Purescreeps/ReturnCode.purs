@@ -5,11 +5,10 @@ import Data.Either (Either(..), either)
 import Effect (Effect)
 import Screeps.ReturnCode (ReturnCode, ok)
 
-toEither :: ReturnCode → Either ReturnCode ReturnCode
-toEither c = if c == ok then Right c else Left c
+type Status = Either String Unit
 
-branch :: ∀ a. a → a → ReturnCode → a
-branch x y c = either (\_ → x) (\_ → y) (toEither c)
+toStatus :: ReturnCode → Status
+toStatus c = if c == ok then Right unit else Left (show c)
 
-orElse :: Effect ReturnCode → ReturnCode → Effect ReturnCode
-orElse eff code = branch (eff) (pure code) code
+orElse :: Effect Status → Status → Effect Status
+orElse eff status = either (\l → eff) (\r → pure status) status
