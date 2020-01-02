@@ -32,15 +32,19 @@ genericCreep capacity
 
 genericCreep capacity = concat [ genericCreep (capacity - 200), [ part_work, part_carry, part_move ] ]
 
-toStatusAction :: forall a. (Creep → a → Effect ReturnCode) → (Creep → a → Effect Status)
-toStatusAction f = (\creep target → (liftM1 toStatus) (f creep target))
+type Job = Creep → Effect Status
 
-moveToAction :: forall a. (Creep → a → Effect Status) → (Creep → a → Effect Status)
+type Jobs = Array Job
+
+toTargetToJob :: forall a. (Creep → a → Effect ReturnCode) → (a → Job)
+toTargetToJob f = (\target creep → (liftM1 toStatus) (f creep target))
+
+moveToAction :: forall a. (a → Job) → (a → Job)
 moveToAction action =
-  ( \creep target →
-      action creep target
+  ( \target creep →
+      action target creep
         >>= orElse
             ( 
-              toStatusAction (\c t → (moveTo' c (TargetObj t) (moveOpts { visualizePathStyle = Just {} }))) creep target
+              toTargetToJob (\c t → (moveTo' c (TargetObj t) (moveOpts { visualizePathStyle = Just {} }))) target creep
             )
   )

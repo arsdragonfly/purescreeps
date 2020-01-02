@@ -10,8 +10,8 @@ import Screeps.RoomObject (Room)
 import Screeps.Stores (AnyStore, storeTotalFree, toAnyStore)
 import Screeps.Structure (structureType, structure_extension, structure_spawn, structure_tower)
 
-findMyEmptyStructures :: Room → Array AnyStore
-findMyEmptyStructures room =
+findMyEmptyStores :: Room → Array AnyStore
+findMyEmptyStores room =
   find' room find_structures
     ( \s →
         elem (structureType s)
