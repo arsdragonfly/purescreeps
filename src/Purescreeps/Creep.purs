@@ -2,16 +2,24 @@ module Purescreeps.Creep where
 
 import Prelude
 
-import Data.Array (concat)
+import Data.Array (concat, zipWith)
+import Data.Either (Either(..))
+import Data.Exists (Exists, runExists)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
+import Data.Traversable (sequence, traverse)
+import Data.Tuple (Tuple)
 import Effect (Effect)
+import Purescreeps.Harvest (findCorrespondingSource)
 import Purescreeps.ReturnCode (Status, toStatus, orElse)
 import Screeps.BodyPartType (BodyPartType, part_carry, part_move, part_work)
-import Screeps.Creep (Creep, moveOpts, moveTo')
+import Screeps.Controller (Controller)
+import Screeps.Creep (Creep, harvestSource, moveOpts, moveTo', transferToStructure, upgradeController)
+import Screeps.Resource (resource_energy)
 import Screeps.ReturnCode (ReturnCode)
-import Screeps.RoomObject (class RoomObject, AnyRoomObject)
+import Screeps.Source (Source)
 import Screeps.Spawn (Spawn)
+import Screeps.Stores (storeTotalFree, storeTotalUsed)
+import Screeps.Structure (class Structure)
 import Screeps.Types (TargetPosition(..))
 
 type CreepMemory
@@ -35,19 +43,53 @@ genericCreep capacity
 
 genericCreep capacity = concat [ genericCreep (capacity - 200), [ part_work, part_carry, part_move ] ]
 
-type Job = Creep → Effect Status
+type Job
+  = Creep → Effect Status
 
-toTargetToJob :: forall a. RoomObject a ⇒ (Creep → a → Effect ReturnCode) → (a → Job)
+toTargetToJob :: forall a. (Creep → a → Effect ReturnCode) → (a → Job)
 toTargetToJob f = (\target creep → (liftM1 toStatus) (f creep target))
 
-moveToAction :: forall a. RoomObject a ⇒ (a → Job) → (a → Job)
+moveToAction :: forall a. (a → Job) → (a → Job)
 moveToAction action =
   ( \target creep →
       action target creep
         >>= orElse
-            ( 
-              toTargetToJob (\c t → (moveTo' c (TargetObj t) (moveOpts { visualizePathStyle = Just {} }))) target creep
+            ( toTargetToJob (\c t → (moveTo' c (TargetObj t) (moveOpts { visualizePathStyle = Just {} }))) target creep
             )
   )
 
-type Target = Tuple (AnyRoomObject → Job) AnyRoomObject
+data TargetF a
+  = TargetF (a → Job) a
+
+type Target
+  = Exists TargetF
+
+harvestSource' :: Source → Job
+harvestSource' = toTargetToJob harvestSource
+
+upgradeController' :: Controller → Job
+upgradeController' = toTargetToJob upgradeController
+
+transferEnergyToStructure' :: ∀ s. Structure s ⇒ s → Job
+transferEnergyToStructure' = toTargetToJob (\c t → transferToStructure c t resource_energy)
+
+runTarget :: Target → Job
+runTarget = runExists runTarget'
+  where
+  runTarget' :: forall a. TargetF a -> Job
+  runTarget' (TargetF action target) =
+    ( \creep → case { source: findCorrespondingSource creep } of
+        { source: Just source } →
+          ( if storeTotalUsed creep == 0 then
+              (moveToAction harvestSource' source creep)
+            else
+              if storeTotalFree creep == 0 then
+                (moveToAction action target creep)
+              else
+                (harvestSource' source creep >>= orElse (moveToAction action target creep))
+          )
+        { source: _ } → pure $ Left "No source/controller found"
+    )
+
+assignTargets :: Array Target → Array (Tuple String Creep) → Effect (Array (Tuple String Status))
+assignTargets targets creeps = (traverse sequence) (zipWith (\target creep → runTarget target <$> creep) targets creeps)
