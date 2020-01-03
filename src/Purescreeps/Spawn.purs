@@ -1,7 +1,6 @@
 module Purescreeps.Spawn where
 
 import Prelude
-
 import Data.Either (Either)
 import Data.List (List)
 import Data.Maybe (Maybe(..))

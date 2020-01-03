@@ -1,21 +1,26 @@
 module Purescreeps.Creep where
 
 import Prelude
-
-import Data.Array (concat, zipWith)
+import Data.Array (catMaybes, concat, foldMap, replicate, zipWith)
 import Data.Either (Either(..))
-import Data.Exists (Exists, runExists)
+import Data.Exists (Exists, mkExists, runExists)
+import Data.Foldable (length)
+import Data.List (List)
+import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple)
 import Effect (Effect)
+import Purescreeps.Colony (Colony(..))
 import Purescreeps.Harvest (findCorrespondingSource)
 import Purescreeps.ReturnCode (Status, toStatus, orElse)
+import Purescreeps.Work (findMyEmptySpawns)
 import Screeps.BodyPartType (BodyPartType, part_carry, part_move, part_work)
 import Screeps.Controller (Controller)
 import Screeps.Creep (Creep, harvestSource, moveOpts, moveTo', transferToStructure, upgradeController)
 import Screeps.Resource (resource_energy)
 import Screeps.ReturnCode (ReturnCode)
+import Screeps.Room (controller)
 import Screeps.Source (Source)
 import Screeps.Spawn (Spawn)
 import Screeps.Stores (storeTotalFree, storeTotalUsed)
@@ -90,6 +95,35 @@ runTarget = runExists runTarget'
           )
         { source: _ } → pure $ Left "No source/controller found"
     )
+
+generateControllerUpgradeTargets :: List Colony → Map String Creep → Array Target
+generateControllerUpgradeTargets colonies creeps =
+  ( foldMap
+      ( \(Colony room) →
+          (replicate (length creeps) (controller room)) # catMaybes
+            # map
+                ( \controller →
+                    mkExists $ TargetF upgradeController' controller
+                )
+      )
+      colonies
+  )
+
+generateFillStoreTargets :: List Colony → Map String Creep → Array Target
+generateFillStoreTargets colonies creeps =
+  ( foldMap
+      ( \(Colony room) →
+          findMyEmptySpawns room
+            # map
+                ( \store →
+                    mkExists $ TargetF transferEnergyToStructure' store
+                )
+      )
+      colonies
+  )
+
+generateTargets :: List Colony → Map String Creep → Array Target
+generateTargets colonies creeps = generateFillStoreTargets colonies creeps <> generateControllerUpgradeTargets colonies creeps
 
 assignTargets :: Array Target → Array (Tuple String Creep) → Effect (Array (Tuple String Status))
 assignTargets targets creeps = (traverse sequence) (zipWith (\target creep → runTarget target <$> creep) targets creeps)

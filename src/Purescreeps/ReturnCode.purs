@@ -5,7 +5,8 @@ import Data.Either (Either(..), either)
 import Effect (Effect)
 import Screeps.ReturnCode (ReturnCode, ok)
 
-type Status = Either String Unit
+type Status
+  = Either String Unit
 
 toStatus :: ReturnCode → Status
 toStatus c = if c == ok then Right unit else Left (show c)
