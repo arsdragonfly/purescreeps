@@ -33,6 +33,8 @@ type CreepMemory
 type BodySpec
   = Array BodyPartType
 
+foreign import clearDeadCreepMemory :: Effect Unit
+
 genericCreep :: Int → BodySpec
 genericCreep capacity
   | capacity < 50 = []
