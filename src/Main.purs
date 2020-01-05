@@ -1,19 +1,25 @@
 module Main where
 
 import Prelude
+
 import Data.Map (toUnfoldable)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Console (logShow)
 import Purescreeps.Colony (findColonies)
 import Purescreeps.Creep (clearDeadCreepMemory, assignTargets, generateTargets)
+import Purescreeps.Context (defaultContext, displayFootprintForCurrentTick)
 import Purescreeps.Spawn (createCreeps)
 import Screeps.Game (creeps) as Game
+import Screeps.Memory (getMemoryGlobal, set)
 
 main :: Effect Unit
 main = do
   clearDeadCreepMemory
-  colonies <- findColonies
+  memory ← getMemoryGlobal
+  set memory "context" defaultContext
+  colonies ← findColonies
   (sequence $ map createCreeps colonies) >>= logShow
-  creeps <- Game.creeps
+  void $ displayFootprintForCurrentTick colonies
+  creeps ← Game.creeps
   (assignTargets (generateTargets colonies creeps) (toUnfoldable creeps)) >>= logShow

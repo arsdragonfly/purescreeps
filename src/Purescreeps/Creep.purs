@@ -1,12 +1,11 @@
 module Purescreeps.Creep where
 
 import Prelude
+
 import Data.Array (catMaybes, concat, foldMap, replicate, zipWith)
 import Data.Either (Either(..))
 import Data.Exists (Exists, mkExists, runExists)
-import Data.Foldable (length)
-import Data.List (List)
-import Data.Map (Map)
+import Data.Foldable (class Foldable, length)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple)
@@ -98,7 +97,7 @@ runTarget = runExists runTarget'
         { source: _ } → pure $ Left "No source/controller found"
     )
 
-generateControllerUpgradeTargets :: List Colony → Map String Creep → Array Target
+generateControllerUpgradeTargets :: ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony → g Creep → Array Target
 generateControllerUpgradeTargets colonies creeps =
   ( foldMap
       ( \(Colony room) →
@@ -111,7 +110,7 @@ generateControllerUpgradeTargets colonies creeps =
       colonies
   )
 
-generateFillStoreTargets :: List Colony → Map String Creep → Array Target
+generateFillStoreTargets ::  ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony → g Creep → Array Target
 generateFillStoreTargets colonies creeps =
   ( foldMap
       ( \(Colony room) →
@@ -124,7 +123,7 @@ generateFillStoreTargets colonies creeps =
       colonies
   )
 
-generateTargets :: List Colony → Map String Creep → Array Target
+generateTargets ::  ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony → g Creep → Array Target
 generateTargets colonies creeps = generateFillStoreTargets colonies creeps <> generateControllerUpgradeTargets colonies creeps
 
 assignTargets :: Array Target → Array (Tuple String Creep) → Effect (Array (Tuple String Status))
