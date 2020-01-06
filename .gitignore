@@ -10,3 +10,4 @@ psc-ide-server.tix
 *.#*
 .psc-ide-port
 secrets.js
+.spago

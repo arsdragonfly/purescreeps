@@ -5,23 +5,21 @@
     "grunt": "^1.0.4",
     "grunt-screeps": "^1.4.0",
     "pulp": "^13.0.0",
-    "purescript": "^0.13.2",
+    "purescript": "^0.13.5",
     "purty": "^4.5.1",
     "screeps-profiler": "^2.0.1"
   },
   "scripts": {
-    "clean": "rm -rf output .pulp-cache",
-    "build": "npm run clean && pulp --then \"npm run wrapMain\" build --skip-entry-point --optimise --to output/screepsMain.js",
+    "clean": "rm -rf output .spago",
+    "build": "spago bundle-module --main Main --to output/screepsMain.js || npm run wrapMain",
     "deploy": "grunt screeps",
     "deploy:sim": "grunt screeps --branch=purescreeps",
     "deploy:private": "cp output/main.js ~/.config/Screeps/scripts/loveudk_ddns_net___21025/purescreeps/main.js",
     "wrapMain": "cp output/screepsMain.js output/main.js && echo 'module.exports.loop = PS[\"Main\"].main' >> output/main.js",
-    "test": "pulp test",
-    "watch": "pulp --watch build --skip-entry-point --optimise --to output/screepsMain.js",
-    "watch:deploy": "pulp --watch --then \"npm run wrapMain && npm run deploy\" build --skip-entry-point --optimise --to output/screepsMain.js",
-    "watch:deploy:sim": "pulp --watch --then \"npm run wrapMain && npm run deploy:sim\" build --skip-entry-point --optimise --to output/screepsMain.js",
-    "watch:deploy:private": "pulp --watch --then \"npm run wrapMain && npm run deploy:private\" build --skip-entry-point --optimise --to output/screepsMain.js",
-    "watch:test": "pulp --watch test"
+    "watch": "spago bundle-module --watch --main Main --to output/screepsMain.js || npm run wrapMain",
+    "watch:deploy": "spago bundle-module --watch --main Main --to output/screepsMain.js || npm run wrapMain && npm run deploy",
+    "watch:deploy:sim": "spago bundle-module --watch --main Main --to output/screepsMain.js || npm run wrapMain && npm run deploy:sim",
+    "watch:deploy:private": "spago bundle-module --watch --main Main --to output/screepsMain.js || npm run wrapMain && npm run deploy:private"
   },
   "devDependencies": {
     "grunt-cli": "^1.3.2"

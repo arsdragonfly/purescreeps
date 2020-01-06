@@ -4,15 +4,10 @@
 
 This is a [Purescript](http://www.purescript.org/) AI for [screeps](https://screeps.com/) using [purescript-screeps](https://github.com/arsdragonfly/purescript-screeps).
 
-Install project dependencies
+Install project dependencies and build project (check `package.json` to see more commands):
 
 ```
 npm install
-bower update --force-latest
-```
-
-Build project:
-
-```
-npm run build
+npm install -g spago
+spago build
 ```
