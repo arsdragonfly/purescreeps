@@ -13,10 +13,11 @@ import Effect (Effect)
 import Purescreeps.Colony (Colony(..))
 import Purescreeps.Harvest (findCorrespondingSource)
 import Purescreeps.ReturnCode (Status, toStatus, orElse)
-import Purescreeps.Work (findMyEmptySpawns)
+import Purescreeps.Work (findConstructionSites, findMyEmptyExtensions, findMyEmptySpawns, findMyEmptyTowers)
 import Screeps.BodyPartType (BodyPartType, part_carry, part_move, part_work)
+import Screeps.ConstructionSite (ConstructionSite)
 import Screeps.Controller (Controller)
-import Screeps.Creep (Creep, harvestSource, moveOpts, moveTo', transferToStructure, upgradeController)
+import Screeps.Creep (Creep, build, harvestSource, moveOpts, moveTo', transferToStructure, upgradeController)
 import Screeps.Resource (resource_energy)
 import Screeps.ReturnCode (ReturnCode)
 import Screeps.Room (controller)
@@ -79,6 +80,9 @@ upgradeController' = toTargetToJob upgradeController
 transferEnergyToStructure' :: ∀ s. Structure s ⇒ s → Job
 transferEnergyToStructure' = toTargetToJob (\c t → transferToStructure c t resource_energy)
 
+buildConstructionSite' :: ConstructionSite → Job
+buildConstructionSite' = toTargetToJob build
+
 runTarget :: Target → Job
 runTarget = runExists runTarget'
   where
@@ -114,7 +118,7 @@ generateFillStoreTargets ::  ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony →
 generateFillStoreTargets colonies creeps =
   ( foldMap
       ( \(Colony room) →
-          findMyEmptySpawns room
+          ((findMyEmptySpawns room) <> (findMyEmptyExtensions room) <> (findMyEmptyTowers room))
             # map
                 ( \store →
                     mkExists $ TargetF transferEnergyToStructure' store
@@ -123,8 +127,21 @@ generateFillStoreTargets colonies creeps =
       colonies
   )
 
+generateBuildTargets ::  ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony → g Creep → Array Target
+generateBuildTargets colonies creeps =
+  ( foldMap
+      ( \(Colony room) →
+          (findConstructionSites room)
+            # map
+                ( \site →
+                    mkExists $ TargetF buildConstructionSite' site
+                )
+      )
+      colonies
+  )
+
 generateTargets ::  ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony → g Creep → Array Target
-generateTargets colonies creeps = generateFillStoreTargets colonies creeps <> generateControllerUpgradeTargets colonies creeps
+generateTargets colonies creeps = generateFillStoreTargets colonies creeps <> generateBuildTargets colonies creeps <> generateControllerUpgradeTargets colonies creeps
 
 assignTargets :: Array Target → Array (Tuple String Creep) → Effect (Array (Tuple String Status))
 assignTargets targets creeps = (traverse sequence) (zipWith (\target creep → runTarget target <$> creep) targets creeps)
