@@ -143,6 +143,16 @@ let additions = {
     ]
         , repo = "https://github.com/arsdragonfly/purescript-screeps.git"
         , version = "master"
+    },
+    monoidal-containers = { dependencies =
+    [ "console"
+    , "effect"
+    , "psci-support"
+    , "ordered-collections"
+    , "unordered-collections"
+    ]
+        , repo = "https://github.com/arsdragonfly/purescript-monoidal-containers.git"
+        , version = "master"
     }
 }
 

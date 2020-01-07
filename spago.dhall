@@ -3,7 +3,7 @@ Welcome to a Spago project!
 You can edit this file as you like.
 -}
 { name = "purescreeps"
-, dependencies = [ "console", "effect", "psci-support", "random", "run", "screeps-classy" ]
+, dependencies = [ "console", "effect", "psci-support", "random", "run", "screeps-classy", "monoidal-containers" ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
