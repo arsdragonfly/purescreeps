@@ -4,11 +4,11 @@ import Prelude
 
 import Data.Array (catMaybes, length)
 import Data.Either (Either)
-import Data.List (List, elem)
+import Data.List (elem)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Effect (Effect)
-import Purescreeps.Colony (Colony(..), findColonies)
+import Purescreeps.Colony (Colony(..))
 import Purescreeps.Creep (BodySpec, genericCreep)
 import Screeps.Extension (Extension)
 import Screeps.FindType (find_my_spawns, find_my_structures)
@@ -39,8 +39,3 @@ findCapacity colony = 300 + (length (findExtensions colony) * 50) / (length (fin
 
 createCreeps :: Colony → Effect (Array (Either ReturnCode String))
 createCreeps colony = sequence $ map (\s → createSpecifiedCreep s (genericCreep $ findCapacity colony)) $ findSpawns colony
-
-createCreepsForAllColonies :: Effect (List (Array (Either ReturnCode String)))
-createCreepsForAllColonies = do
-  colonies <- findColonies
-  sequence $ map createCreeps colonies
