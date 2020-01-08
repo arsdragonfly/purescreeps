@@ -43,7 +43,7 @@ genericCreep capacity
   | capacity < 100 = [ part_move ]
 
 genericCreep capacity
-  | capacity < 150 = [ part_carry, part_move ]
+  | capacity < 200 = [ part_carry, part_move ]
 
 genericCreep capacity
   | capacity < 250 = [ part_work, part_carry, part_move ]
