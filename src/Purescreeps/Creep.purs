@@ -4,11 +4,10 @@ import Prelude
 
 import Data.Array (catMaybes, concat, foldMap, replicate, zipWith)
 import Data.Either (Either(..))
-import Data.Exists (Exists, mkExists, runExists)
 import Data.Foldable (class Foldable, length)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Purescreeps.Colony (Colony(..))
 import Purescreeps.Harvest (findCorrespondingSource)
@@ -21,6 +20,7 @@ import Screeps.Creep (Creep, build, harvestSource, moveOpts, moveTo', transferTo
 import Screeps.Resource (resource_energy)
 import Screeps.ReturnCode (ReturnCode)
 import Screeps.Room (controller)
+import Screeps.RoomObject (class RoomObject, AnyRoomObject, asAnyRoomObject)
 import Screeps.Source (Source)
 import Screeps.Spawn (Spawn)
 import Screeps.Stores (storeTotalFree, storeTotalUsed)
@@ -53,23 +53,21 @@ genericCreep capacity = concat [ genericCreep (capacity - 200), [ part_work, par
 type Job
   = Creep → Effect Status
 
-toTargetToJob :: forall a. (Creep → a → Effect ReturnCode) → (a → Job)
+toTargetToJob :: forall a. RoomObject a ⇒ (Creep → a → Effect ReturnCode) → (a → Job)
 toTargetToJob f = (\target creep → (liftM1 toStatus) (f creep target))
 
-moveToAction :: forall a. (a → Job) → (a → Job)
-moveToAction action =
+moveToAction :: forall a. RoomObject a ⇒ Job → a → Job
+moveToAction job =
   ( \target creep →
-      action target creep
+      job creep
         >>= orElse
             ( toTargetToJob (\c t → (moveTo' c (TargetObj t) (moveOpts { visualizePathStyle = Just {} }))) target creep
             )
   )
 
-data TargetF a
-  = TargetF (a → Job) a
 
 type Target
-  = Exists TargetF
+  = Tuple Job AnyRoomObject
 
 harvestSource' :: Source → Job
 harvestSource' = toTargetToJob harvestSource
@@ -77,6 +75,7 @@ harvestSource' = toTargetToJob harvestSource
 upgradeController' :: Controller → Job
 upgradeController' = toTargetToJob upgradeController
 
+--transferEnergyToStructure' :: ∀ s. Structure s ⇒ s → Job
 transferEnergyToStructure' :: ∀ s. Structure s ⇒ s → Job
 transferEnergyToStructure' = toTargetToJob (\c t → transferToStructure c t resource_energy)
 
@@ -84,22 +83,19 @@ buildConstructionSite' :: ConstructionSite → Job
 buildConstructionSite' = toTargetToJob build
 
 runTarget :: Target → Job
-runTarget = runExists runTarget'
-  where
-  runTarget' :: forall a. TargetF a -> Job
-  runTarget' (TargetF action target) =
-    ( \creep → case { source: findCorrespondingSource creep } of
-        { source: Just source } →
-          ( if storeTotalUsed creep == 0 then
-              (moveToAction harvestSource' source creep)
+runTarget (Tuple job target) =
+  ( \creep → case { source: findCorrespondingSource creep } of
+      { source: Just source } →
+        ( if storeTotalUsed creep == 0 then
+           (moveToAction (harvestSource' source) source) creep
+          else
+            if storeTotalFree creep == 0 then
+              (moveToAction job target) creep
             else
-              if storeTotalFree creep == 0 then
-                (moveToAction action target creep)
-              else
-                (harvestSource' source creep >>= orElse (moveToAction action target creep))
-          )
-        { source: _ } → pure $ Left "No source/controller found"
-    )
+              (harvestSource' source creep >>= orElse ((moveToAction job target) creep))
+        )
+      { source: _ } → pure $ Left "No source/controller found"
+  )
 
 generateControllerUpgradeTargets :: ∀ f g. Foldable f ⇒ Foldable g ⇒ f Colony → g Creep → Array Target
 generateControllerUpgradeTargets colonies creeps =
@@ -108,7 +104,7 @@ generateControllerUpgradeTargets colonies creeps =
           (replicate (length creeps) (controller room)) # catMaybes
             # map
                 ( \controller →
-                    mkExists $ TargetF upgradeController' controller
+                    Tuple (upgradeController' controller) (asAnyRoomObject controller)
                 )
       )
       colonies
@@ -121,7 +117,7 @@ generateFillStoreTargets colonies creeps =
           ((findMyEmptySpawns room) <> (findMyEmptyExtensions room) <> (findMyEmptyTowers room))
             # map
                 ( \store →
-                    mkExists $ TargetF transferEnergyToStructure' store
+                  Tuple (transferEnergyToStructure' store) (asAnyRoomObject store)
                 )
       )
       colonies
@@ -134,7 +130,7 @@ generateBuildTargets colonies creeps =
           (findConstructionSites room)
             # map
                 ( \site →
-                    mkExists $ TargetF buildConstructionSite' site
+                    Tuple (buildConstructionSite' site) (asAnyRoomObject site)
                 )
       )
       colonies
