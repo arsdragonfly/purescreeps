@@ -2,13 +2,12 @@ module Purescreeps.Context where
 
 import Prelude
 
-import Data.Array (snoc)
+import Data.Array (slice, length, snoc)
 import Data.Either (either)
 import Data.Foldable (class Foldable, foldMap, foldl)
-import Data.List (List, concat, fromFoldable)
-import Data.Map (singleton)
-import Data.Map.Monoidal (MonoidalMap(..))
+import Data.Map (Map, singleton, keys)
 import Data.Monoid.Additive (Additive(..))
+import Data.Set (Set)
 import Data.Traversable (class Traversable, traverse)
 import Effect (Effect)
 import Foreign.Object (Object)
@@ -34,11 +33,6 @@ getContext = do
   result ← get memory "context"
   pure $ either (const defaultContext) identity result
 
-updateContext :: Context → Effect Context
-updateContext context = do
-  colonies ← findColonies
-  pure $ { footprints: snoc context.footprints (getFootprintForCurrentTick colonies) }
-
 setContext :: Context → Effect Unit
 setContext context = do
   memory ← getMemoryGlobal
@@ -53,17 +47,30 @@ getFootprintForCurrentTick = foldMap getFootprint
 displayFootprint :: ∀ f. Foldable f ⇒ f RoomPosition → RoomVisual → Effect RoomVisual
 displayFootprint rpss rv = foldl (\erv rps → erv >>= circle rps) (pure rv) rpss
 
-displayFootprintForCurrentTick :: ∀ t. Traversable t ⇒ t Colony → Effect (t RoomVisual)
-displayFootprintForCurrentTick colonies =
+flattenFootprints :: Array (Array RoomPosition) → Array RoomPosition
+flattenFootprints = join
+
+type Counter k = Map k (Additive Int)
+
+countFootprints :: ∀ f. Foldable f ⇒ f RoomPosition → Counter RoomPosition
+countFootprints = foldMap (\rp → singleton rp (Additive 1))
+
+countFootprintsFromContext :: Effect (Set RoomPosition)
+countFootprintsFromContext = do
+  context ← getContext
+  pure (flattenFootprints context.footprints # countFootprints # keys)
+
+displayFootprintFromContext :: ∀ t. Traversable t ⇒ t Colony → Effect (t RoomVisual)
+displayFootprintFromContext colonies =
   traverse
-    ( \(Colony room) → (getRoomVisual room) >>= (getFootprint (Colony room) # displayFootprint)
+    ( \(Colony room) → do
+      rvs ← getRoomVisual room
+      rpss ← countFootprintsFromContext
+      displayFootprint rpss rvs
     )
     colonies
 
-flattenFootprints :: List (Array RoomPosition) → List RoomPosition
-flattenFootprints = map fromFoldable >>> concat
-
-type Counter k = MonoidalMap k (Additive Int)
-
-countFootprints :: List RoomPosition → Counter RoomPosition
-countFootprints = foldMap (\rp → MonoidalMap (singleton rp (Additive 1)))
+updateContext :: Context → Effect Context
+updateContext context = do
+  colonies ← findColonies
+  pure $ { footprints: slice (max 0 (length context.footprints - 50)) (length context.footprints + 1) (snoc context.footprints (getFootprintForCurrentTick colonies)) }
