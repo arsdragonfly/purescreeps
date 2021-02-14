@@ -74,3 +74,5 @@ updateContext :: Context → Effect Context
 updateContext context = do
   colonies ← findColonies
   pure $ { footprints: slice (max 0 (length context.footprints - 50)) (length context.footprints + 1) (snoc context.footprints (getFootprintForCurrentTick colonies)) }
+
+-- TODO: build roads for most accessed RoomPosition's

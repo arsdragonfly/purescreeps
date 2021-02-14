@@ -16,12 +16,10 @@ import Screeps.Game (creeps) as Game
 main :: Effect Unit
 main = do
   clearDeadCreepMemory
-  context ← getContext
-  newContext ← updateContext context
-  _ ←setContext newContext
-  -- _ ← setContext defaultContext
+  -- context ← getContext
+  -- newContext ← updateContext context
+  -- _ ←setContext newContext
   colonies ← findColonies
-  _ ← displayFootprintFromContext colonies
   -- (sequence $ map createCreeps colonies) >>= logShow
   _ ← sequence $ map createCreeps colonies
   -- (sequence $ map runTowers colonies) >>= logShow
